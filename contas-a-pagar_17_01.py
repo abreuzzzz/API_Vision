@@ -120,7 +120,7 @@ def main():
     json_secret = os.getenv("GDRIVE_SERVICE_ACCOUNT")
     drive = autenticar_drive_service_account(json_secret)
 
-    df_csv = pd.DataFrame(columns=["id", "status", "descricao", "total", "data_vencimento", "centro_custo_nome"])
+    df_csv = baixar_csv_drive(drive, CSV_FILE_NAME, PASTA_ID)
 
     data_inicio = datetime.date(2017, 1, 1)
     data_fim = datetime.date(2017, 4, 1)

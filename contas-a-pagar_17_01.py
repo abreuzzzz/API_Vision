@@ -122,8 +122,8 @@ def main():
 
     df_csv = baixar_csv_drive(drive, CSV_FILE_NAME, PASTA_ID)
 
-    data_inicio = datetime.date(2017, 1, 1)
-    data_fim = datetime.date(2017, 4, 1)
+    data_inicio = datetime.date(2025, 1, 1)
+    data_fim = datetime.date(2025, 4, 1)
 
     while data_inicio < data_fim:
         inicio = data_inicio.strftime("%Y-%m-%d")

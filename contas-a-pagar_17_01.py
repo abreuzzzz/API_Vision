@@ -1,4 +1,5 @@
 import requests
+import time
 import datetime
 import pandas as pd
 import os
@@ -142,6 +143,7 @@ def main():
 
                 df_csv = atualizar_csv(df_csv, eventos)
                 pagina += 1
+                 time.sleep(1)
 
         data_inicio += relativedelta(months=1)
 

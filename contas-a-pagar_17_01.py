@@ -143,7 +143,7 @@ def main():
 
                 df_csv = atualizar_csv(df_csv, eventos)
                 pagina += 1
-                 time.sleep(1)
+                 time.sleep(10)
 
         data_inicio += relativedelta(months=1)
 

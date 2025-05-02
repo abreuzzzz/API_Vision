@@ -15,7 +15,7 @@ sheets_service = build("sheets", "v4", credentials=credentials)
 
 # ===================== Headers da API Conta Azul =====================
 headers = {
-    'X-Authorization': '00e3b816-f844-49ee-a75e-3da30f1c2630',
+    'X-Authorization': '64057706-c700-4036-9cf0-c4b3ed44c594',
     'Content-Type': 'application/json',
     'User-Agent': 'Mozilla/5.0'
 }

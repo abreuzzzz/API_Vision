@@ -61,11 +61,9 @@ categorias_com_alta = (variacao_mensal_pct > 0.3).apply(lambda row: row[row > 0.
 
 # Valores totais
 total_recebido = df[
-    (df['tipo'] == 'Receita') & (df['status'] == 'ACQUITTED')
-]['categoriesRatio.value'].sum()
+    df[df['tipo'] == 'Receita']['categoriesRatio.value'].sum()
 total_pago = df[
-    (df['tipo'] == 'Despesa') & (df['status'] == 'ACQUITTED')
-]['categoriesRatio.value'].sum()
+    df[df['tipo'] == 'Despesa']['categoriesRatio.value'].sum()
 total_pendente_despesa = df[
     (df['tipo'] == 'Despesa') & (df['status'] == 'OVERDUE')
 ]['categoriesRatio.value'].sum()

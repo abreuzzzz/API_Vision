@@ -60,12 +60,8 @@ variacao_mensal_pct = resumo_mensal_categoria.pct_change().fillna(0)
 categorias_com_alta = (variacao_mensal_pct > 0.3).apply(lambda row: row[row > 0.3].to_dict(), axis=1).to_dict()
 
 # Valores totais
-total_recebido = df[
-    (df['tipo'] == 'Receita') & (df['lastAcquittanceDate'].notna()) & (df['lastAcquittanceDate'] != '')
-]['categoriesRatio.value'].sum()
-total_pago = df[
-    (df['tipo'] == 'Despesa') & (df['lastAcquittanceDate'].notna()) & (df['lastAcquittanceDate'] != '')
-]['categoriesRatio.value'].sum()
+total_recebido = df[df['tipo'] == 'Receita']['categoriesRatio.value'].sum()
+total_pago = df[df['tipo'] == 'Despesa']['categoriesRatio.value'].sum()
 total_pendente_despesa = df[
     (df['tipo'] == 'Despesa') & (df['status'] == 'OVERDUE')
 ]['categoriesRatio.value'].sum()

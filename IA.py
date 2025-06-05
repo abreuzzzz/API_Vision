@@ -49,8 +49,6 @@ df['dueDate'] = parse_data_segura(df['dueDate'])
 # Filtrar apenas registros do ano corrente
 ano_corrente = datetime.today().year
 df = df[df['lastAcquittanceDate'].dt.year == ano_corrente]
-df = df[df['dueDate'].dt.year == ano_corrente]
-
 
 # Criar colunas auxiliares
 df['AnoMes'] = df['lastAcquittanceDate'].dt.to_period('M')

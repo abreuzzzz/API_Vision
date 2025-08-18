@@ -6,18 +6,17 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 
-# ===================== Autenticação Google =====================
+# ===== Autenticação Google =====
 json_secret = os.getenv("GDRIVE_SERVICE_ACCOUNT")
 credentials_info = json.loads(json_secret)
 credentials = service_account.Credentials.from_service_account_info(
     credentials_info,
     scopes=["https://www.googleapis.com/auth/drive", "https://www.googleapis.com/auth/spreadsheets"]
 )
-
 drive_service = build("drive", "v3", credentials=credentials)
 sheets_service = build("sheets", "v4", credentials=credentials)
 
-# ===================== Buscar arquivos no Drive =====================
+# ===== Buscar arquivos no Drive =====
 folder_id = "16prsjUYZj-fq6ORpQhnWxqMNGTMidKSj"
 sheet_input_name = "Financeiro_contas_a_pagar_Vision"
 sheet_output_name = "Detalhe_centro_pagamento"
@@ -33,33 +32,39 @@ def get_file_id(name):
 input_sheet_id = get_file_id(sheet_input_name)
 output_sheet_id = get_file_id(sheet_output_name)
 
-# ===================== Leitura do Google Sheets diretamente para o Pandas =====================
+# ===== Leitura do Google Sheets diretamente para o Pandas =====
 sheet_range = "A:Z"
 result = sheets_service.spreadsheets().values().get(
     spreadsheetId=input_sheet_id,
     range=sheet_range
 ).execute()
-
 values = result.get('values', [])
 df_base = pd.DataFrame(values[1:], columns=values[0])
 ids = df_base["financialEvent.id"].dropna().unique()
-
 print(f"📥 Planilha carregada com {len(ids)} IDs únicos.")
 
-# ===================== Configuração da API Conta Azul =====================
+# ===== Configuração da API Conta Azul =====
 headers = {
     'X-Authorization': '64057706-c700-4036-9cf0-c4b3ed44c594',
     'User-Agent': 'Mozilla/5.0'
 }
 
-# ===================== Função para extrair todos os campos aninhados =====================
+# ===== Função para extrair todos os campos aninhados =====
 def extract_fields(item):
     resultado = []
     base_id = item.get("id")
+    
+    # Verificar se existem attachments
+    attachments = item.get("attachments", [])
+    tem_attachments = "Sim" if attachments and len(attachments) > 0 else "Não"
+    
     categories = item.get("categoriesRatio", [])
-
     for cat in categories:
         linha = {"id": base_id}
+        
+        # Adicionar a informação sobre attachments em cada linha
+        linha["tem_attachments"] = tem_attachments
+        
         for k, v in cat.items():
             if k == "costCentersRatio":
                 for i, centro in enumerate(v):
@@ -68,10 +73,15 @@ def extract_fields(item):
             else:
                 linha[f"categoriesRatio.{k}"] = v
         resultado.append(linha)
-
+    
+    # Se não houver categoriesRatio, ainda assim criar uma linha com o ID e status dos attachments
+    if not categories:
+        linha = {"id": base_id, "tem_attachments": tem_attachments}
+        resultado.append(linha)
+    
     return resultado
 
-# ===================== Coleta paralela dos detalhes via API =====================
+# ===== Coleta paralela dos detalhes via API =====
 def fetch_detail(fid):
     url = f"https://services.contaazul.com/contaazul-bff/finance/v1/financial-events/{fid}/summary"
     try:
@@ -85,7 +95,6 @@ def fetch_detail(fid):
     return None
 
 print("🚀 Iniciando requisições paralelas...")
-
 todos_detalhes = []
 with ThreadPoolExecutor(max_workers=10) as executor:
     futures = [executor.submit(fetch_detail, fid) for fid in ids]
@@ -96,8 +105,14 @@ with ThreadPoolExecutor(max_workers=10) as executor:
 
 print(f"✅ Coleta finalizada com {len(todos_detalhes)} registros.")
 
-# ===================== Enviar dados ao Google Sheets =====================
+# ===== Enviar dados ao Google Sheets =====
 df_detalhes = pd.DataFrame(todos_detalhes)
+
+# Reorganizar as colunas para colocar 'tem_attachments' no final
+if 'tem_attachments' in df_detalhes.columns:
+    colunas = [col for col in df_detalhes.columns if col != 'tem_attachments']
+    colunas.append('tem_attachments')
+    df_detalhes = df_detalhes[colunas]
 
 # Limpar conteúdo anterior da planilha
 sheets_service.spreadsheets().values().clear(

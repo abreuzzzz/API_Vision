@@ -58,12 +58,16 @@ def extract_fields(item):
     attachments = item.get("attachments", [])
     tem_attachments = "Sim" if attachments and len(attachments) > 0 else "Não"
     
+    # Obter observation
+    observation = item.get("observation", "")
+    
     categories = item.get("categoriesRatio", [])
     for cat in categories:
         linha = {"id": base_id}
         
-        # Adicionar a informação sobre attachments em cada linha
+        # Adicionar as informações sobre attachments e observation em cada linha
         linha["tem_attachments"] = tem_attachments
+        linha["observation"] = observation
         
         for k, v in cat.items():
             if k == "costCentersRatio":
@@ -74,9 +78,9 @@ def extract_fields(item):
                 linha[f"categoriesRatio.{k}"] = v
         resultado.append(linha)
     
-    # Se não houver categoriesRatio, ainda assim criar uma linha com o ID e status dos attachments
+    # Se não houver categoriesRatio, ainda assim criar uma linha com o ID, status dos attachments e observation
     if not categories:
-        linha = {"id": base_id, "tem_attachments": tem_attachments}
+        linha = {"id": base_id, "tem_attachments": tem_attachments, "observation": observation}
         resultado.append(linha)
     
     return resultado
@@ -108,10 +112,14 @@ print(f"✅ Coleta finalizada com {len(todos_detalhes)} registros.")
 # ===== Enviar dados ao Google Sheets =====
 df_detalhes = pd.DataFrame(todos_detalhes)
 
-# Reorganizar as colunas para colocar 'tem_attachments' no final
-if 'tem_attachments' in df_detalhes.columns:
-    colunas = [col for col in df_detalhes.columns if col != 'tem_attachments']
-    colunas.append('tem_attachments')
+# Reorganizar as colunas para colocar 'observation' e 'tem_attachments' no final
+colunas_especiais = ['tem_attachments', 'observation']
+if any(col in df_detalhes.columns for col in colunas_especiais):
+    colunas = [col for col in df_detalhes.columns if col not in colunas_especiais]
+    # Adicionar as colunas especiais na ordem desejada (se existirem)
+    for col in colunas_especiais:
+        if col in df_detalhes.columns:
+            colunas.append(col)
     df_detalhes = df_detalhes[colunas]
 
 # Limpar conteúdo anterior da planilha

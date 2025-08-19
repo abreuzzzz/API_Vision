@@ -55,15 +55,15 @@ def extract_fields(item):
     resultado = []
     base_id = item.get("id")
     
-    # Obter observation
-    observation = item.get("observation", "")
+    # Obter observation com tratamento para None
+    observation = item.get("observation", "") or ""
     
     # Verificar se existem attachments
     attachments = item.get("attachments", [])
     tem_attachments_api = "Sim" if attachments and len(attachments) > 0 else "Não"
     
-    # **NOVA CONDICIONAL**: Se observation contiver "desconsiderar anexo", definir como "Sim"
-    if "desconsiderar anexo" in observation.lower():
+    # **CONDICIONAL CORRIGIDA**: Se observation contiver "desconsiderar anexo", definir como "Sim"
+    if observation and "desconsiderar anexo" in observation.lower():
         tem_attachments = "Sim"
     else:
         tem_attachments = tem_attachments_api

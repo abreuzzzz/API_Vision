@@ -62,7 +62,7 @@ def extract_fields(item):
     attachments = item.get("attachments", [])
     tem_attachments_api = "Sim" if attachments and len(attachments) > 0 else "Não"
     
-    # **CONDICIONAL CORRIGIDA**: Se observation contiver "desconsiderar anexo", definir como "Sim"
+    # **CONDICIONAL**: Se observation contiver "desconsiderar anexo", definir como "Sim"
     if observation and "desconsiderar anexo" in observation.lower():
         tem_attachments = "Sim"
     else:
@@ -117,14 +117,13 @@ with ThreadPoolExecutor(max_workers=10) as executor:
 
 print(f"✅ Coleta finalizada com {len(todos_detalhes)} registros.")
 
-# = Enviar dados ao Google Sheets =
+# = Enviar dados ao Google Sheets em lotes =
 df_detalhes = pd.DataFrame(todos_detalhes)
 
 # Reorganizar as colunas para colocar 'observation' e 'tem_attachments' no final
 colunas_especiais = ['tem_attachments', 'observation']
 if any(col in df_detalhes.columns for col in colunas_especiais):
     colunas = [col for col in df_detalhes.columns if col not in colunas_especiais]
-    # Adicionar as colunas especiais na ordem desejada (se existirem)
     for col in colunas_especiais:
         if col in df_detalhes.columns:
             colunas.append(col)
@@ -136,13 +135,48 @@ sheets_service.spreadsheets().values().clear(
     range="A:Z"
 ).execute()
 
-# Enviar os dados
-values = [df_detalhes.columns.tolist()] + df_detalhes.fillna("").astype(str).values.tolist()
+# Enviar cabeçalho primeiro
+headers_data = [df_detalhes.columns.tolist()]
 sheets_service.spreadsheets().values().update(
     spreadsheetId=output_sheet_id,
     range="A1",
     valueInputOption="RAW",
-    body={"values": values}
+    body={"values": headers_data}
 ).execute()
+print("📊 Cabeçalho enviado com sucesso.")
+
+# Enviar dados em lotes de 1000 linhas
+batch_size = 1000
+data_values = df_detalhes.fillna("").astype(str).values.tolist()
+
+for i in range(0, len(data_values), batch_size):
+    batch_data = data_values[i:i + batch_size]
+    start_row = i + 2  # +2 porque linha 1 é o cabeçalho
+    
+    try:
+        sheets_service.spreadsheets().values().update(
+            spreadsheetId=output_sheet_id,
+            range=f"A{start_row}",
+            valueInputOption="RAW",
+            body={"values": batch_data}
+        ).execute()
+        print(f"📊 Lote {i//batch_size + 1} enviado: linhas {start_row} a {start_row + len(batch_data) - 1}")
+    except Exception as e:
+        print(f"❌ Erro ao enviar lote {i//batch_size + 1}: {e}")
+        # Tentar novamente com lote menor
+        mini_batch_size = 500
+        for j in range(0, len(batch_data), mini_batch_size):
+            mini_batch = batch_data[j:j + mini_batch_size]
+            mini_start_row = start_row + j
+            try:
+                sheets_service.spreadsheets().values().update(
+                    spreadsheetId=output_sheet_id,
+                    range=f"A{mini_start_row}",
+                    valueInputOption="RAW",
+                    body={"values": mini_batch}
+                ).execute()
+                print(f"📊 Mini-lote enviado: linhas {mini_start_row} a {mini_start_row + len(mini_batch) - 1}")
+            except Exception as mini_e:
+                print(f"❌ Erro crítico no mini-lote: {mini_e}")
 
 print("📊 Dados atualizados na planilha com sucesso.")

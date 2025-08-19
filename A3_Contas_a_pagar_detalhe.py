@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 
-# ===== Autenticação Google =====
+# = Autenticação Google =
 json_secret = os.getenv("GDRIVE_SERVICE_ACCOUNT")
 credentials_info = json.loads(json_secret)
 credentials = service_account.Credentials.from_service_account_info(
@@ -16,7 +16,7 @@ credentials = service_account.Credentials.from_service_account_info(
 drive_service = build("drive", "v3", credentials=credentials)
 sheets_service = build("sheets", "v4", credentials=credentials)
 
-# ===== Buscar arquivos no Drive =====
+# = Buscar arquivos no Drive =
 folder_id = "16prsjUYZj-fq6ORpQhnWxqMNGTMidKSj"
 sheet_input_name = "Financeiro_contas_a_pagar_Vision"
 sheet_output_name = "Detalhe_centro_pagamento"
@@ -32,7 +32,7 @@ def get_file_id(name):
 input_sheet_id = get_file_id(sheet_input_name)
 output_sheet_id = get_file_id(sheet_output_name)
 
-# ===== Leitura do Google Sheets diretamente para o Pandas =====
+# = Leitura do Google Sheets diretamente para o Pandas =
 sheet_range = "A:Z"
 result = sheets_service.spreadsheets().values().get(
     spreadsheetId=input_sheet_id,
@@ -40,26 +40,33 @@ result = sheets_service.spreadsheets().values().get(
 ).execute()
 values = result.get('values', [])
 df_base = pd.DataFrame(values[1:], columns=values[0])
+
 ids = df_base["financialEvent.id"].dropna().unique()
 print(f"📥 Planilha carregada com {len(ids)} IDs únicos.")
 
-# ===== Configuração da API Conta Azul =====
+# = Configuração da API Conta Azul =
 headers = {
     'X-Authorization': '64057706-c700-4036-9cf0-c4b3ed44c594',
     'User-Agent': 'Mozilla/5.0'
 }
 
-# ===== Função para extrair todos os campos aninhados =====
+# = Função para extrair todos os campos aninhados =
 def extract_fields(item):
     resultado = []
     base_id = item.get("id")
     
-    # Verificar se existem attachments
-    attachments = item.get("attachments", [])
-    tem_attachments = "Sim" if attachments and len(attachments) > 0 else "Não"
-    
     # Obter observation
     observation = item.get("observation", "")
+    
+    # Verificar se existem attachments
+    attachments = item.get("attachments", [])
+    tem_attachments_api = "Sim" if attachments and len(attachments) > 0 else "Não"
+    
+    # **NOVA CONDICIONAL**: Se observation contiver "desconsiderar anexo", definir como "Sim"
+    if "desconsiderar anexo" in observation.lower():
+        tem_attachments = "Sim"
+    else:
+        tem_attachments = tem_attachments_api
     
     categories = item.get("categoriesRatio", [])
     for cat in categories:
@@ -85,7 +92,7 @@ def extract_fields(item):
     
     return resultado
 
-# ===== Coleta paralela dos detalhes via API =====
+# = Coleta paralela dos detalhes via API =
 def fetch_detail(fid):
     url = f"https://services.contaazul.com/contaazul-bff/finance/v1/financial-events/{fid}/summary"
     try:
@@ -100,6 +107,7 @@ def fetch_detail(fid):
 
 print("🚀 Iniciando requisições paralelas...")
 todos_detalhes = []
+
 with ThreadPoolExecutor(max_workers=10) as executor:
     futures = [executor.submit(fetch_detail, fid) for fid in ids]
     for f in as_completed(futures):
@@ -109,7 +117,7 @@ with ThreadPoolExecutor(max_workers=10) as executor:
 
 print(f"✅ Coleta finalizada com {len(todos_detalhes)} registros.")
 
-# ===== Enviar dados ao Google Sheets =====
+# = Enviar dados ao Google Sheets =
 df_detalhes = pd.DataFrame(todos_detalhes)
 
 # Reorganizar as colunas para colocar 'observation' e 'tem_attachments' no final

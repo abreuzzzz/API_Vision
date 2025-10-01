@@ -8,7 +8,6 @@ from gspread_dataframe import set_with_dataframe
 from oauth2client.service_account import ServiceAccountCredentials
 from google.oauth2.service_account import Credentials
 
-# Configurar sua API Key do OpenAI
 deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
 client = OpenAI(api_key=deepseek_api_key, base_url="https://api.deepseek.com")
 
@@ -36,6 +35,7 @@ df['paid'] = limpar_valores(df['paid'])
 df['categoriesRatio.value'] = limpar_valores(df['categoriesRatio.value'])
 
 # Converter coluna de data
+# Conversão de datas com parsing manual para evitar problemas de formatação
 def parse_data_segura(coluna):
     datas = pd.to_datetime(
         coluna.apply(lambda x: '-'.join(x.split('-')[:3]) if isinstance(x, str) and '-' in x else None),
@@ -203,4 +203,4 @@ for bloco in blocos:
         dados.append([titulo, resultado])
 
 # Escrever na planilha
-worksheet.update("A1", dados)
+worksheet.update(dados, "A1")

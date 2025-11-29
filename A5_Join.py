@@ -17,9 +17,9 @@ client = gspread.authorize(creds)
 
 # === IDs das planilhas ===
 planilhas_ids = {
-    "Financeiro_contas_a_receber_Vision": "1yw2j8uUMzFSE8w7HGca2N0OfaYcLD07koql5ch-nV4o",
-    "Financeiro_contas_a_pagar_Vision": "1YY2Svu6VSq0VkCCsu4u3b-i0PXfKWPtvK5Lj0citKMM",
-    "Financeiro_Completo_Vision": "1xwp9gIz0lV4mW5geUBESj1W59QSySdVYipThXAOUgrU"
+    "Financeiro_contas_a_receber_Vision": "1wB-f-ywlbYh0L9Mh0pd2XfRyUUyCuF_ba0mpQjWT4S8",
+    "Financeiro_contas_a_pagar_Vision": "1zIhxmFzHYmNdKyawzhElFl4Vl1MO3bc6QOapO2ynYwk",
+    "Financeiro_Completo_Vision": "1EiJ_GSWLYAamMmmnIJKHDogP3MtMo7yJoZmwy-mjeHY"
 }
 
 # === Função para abrir e ler planilha por ID ===

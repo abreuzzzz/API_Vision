@@ -12,7 +12,7 @@ client = OpenAI(api_key=deepseek_api_key, base_url="https://api.deepseek.com")
 
 # URL da planilha Google Sheets exportada como CSV
 sheet_id = "1EiJ_GSWLYAamMmmnIJKHDogP3MtMo7yJoZmwy-mjeHY"
-gid = "1737132009"
+gid = "1022337497"
 
 sheet_csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
 SHEET_ID2 = "1BEhsNpIEEviCVbyk9r4s05sHNbPJQe0Y9DiWATLmYYk"
